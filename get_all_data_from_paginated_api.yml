@@ -1,0 +1,42 @@
+---
+- name: Fetch Passenger Data
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Initialize variables
+      set_fact:
+        total_count: 0
+
+    - name: Fetch Data from Initial Page
+      uri:
+        url: "https://api.instantwebtools.net/v1/passenger?page=0&size=100"
+        method: GET
+        return_content: yes
+        status_code: 200
+      register: api_response
+
+    - name: Parse Total Count
+      set_fact:
+        # total_pages:  "{{ api_response.content | from_json | json_query('totalPages') }}"
+        total_count:  "{{ api_response.content | from_json | json_query('totalPassengers') }}"
+   
+    - name: Parse Total Pages
+      set_fact:
+        # total_pages:  "{{ api_response.content | from_json | json_query('totalPages') }}"
+        total_pages: "{{ total_count | int / 100 | int }}"
+    
+    - name : debug the total_pages
+      debug:
+        var: total_pages
+
+    - name: Fetch Data from Pagination Loop
+      uri:
+        url: "https://api.instantwebtools.net/v1/passenger?page={{ item }}&size=100"
+      loop: "{{ range(0, total_pages|int + 1) }}"
+      register: api_responses
+
+    - name: Export to Text File
+      copy:
+        content: "{{ api_responses.results | json_query('[].json') }}"
+        dest: "export.json"
