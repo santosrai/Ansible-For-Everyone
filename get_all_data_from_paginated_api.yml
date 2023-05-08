@@ -15,7 +15,13 @@
         return_content: yes
         status_code: 200
       register: api_response
-
+      
+# NOTE: api_resonse is same as api sends back
+# {
+# "totalPassengers": 1178,
+# "totalPages": 12,
+# "data": [ ]
+# }
     - name: Parse Total Count
       set_fact:
         # total_pages:  "{{ api_response.content | from_json | json_query('totalPages') }}"
@@ -35,7 +41,13 @@
         url: "https://api.instantwebtools.net/v1/passenger?page={{ item }}&size=100"
       loop: "{{ range(0, total_pages|int + 1) }}"
       register: api_responses
-
+      
+# NOTE:  each api_response are stored into results
+#     { "results": [] 
+#     "skipped": false,
+#     "msg": "All items completed",
+#     "changed": false }
+# }
     - name: Export to Text File
       copy:
         content: "{{ api_responses.results | json_query('[].json') }}"
